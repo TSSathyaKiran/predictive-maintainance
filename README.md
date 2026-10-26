@@ -53,7 +53,7 @@ cd backend
 cp .env.example .env        # edit DB credentials if needed
 npm install
 npm run db:init             # creates + seeds the MySQL database (drops it first!)
-npm run dev                 # API on http://localhost:5000
+npm run dev                 # API on http://localhost:5001
 
 # 2. Frontend (new terminal)
 cd frontend
