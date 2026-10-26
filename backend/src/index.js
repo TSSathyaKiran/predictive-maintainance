@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import pool from './db/mysql.js';
+import { connectMongo, isMongoUp } from './db/mongo.js';
 import crudRouter from './routes/crudRouter.js';
 import machines from './routes/machines.js';
 import workOrders from './routes/workOrders.js';
@@ -11,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', async (req, res) => {
-  const status = { mysql: 'down' };
+  const status = { mysql: 'down', mongodb: isMongoUp() ? 'up' : 'down' };
   try {
     await pool.query('SELECT 1');
     status.mysql = 'up';
@@ -57,4 +58,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));
+connectMongo()
+  .catch((err) => console.error('MongoDB connection failed:', err.message))
+  .finally(() => app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`)));
