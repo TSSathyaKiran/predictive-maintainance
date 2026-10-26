@@ -7,6 +7,9 @@ import crudRouter from './routes/crudRouter.js';
 import machines from './routes/machines.js';
 import workOrders from './routes/workOrders.js';
 import errorLogs from './routes/errorLogs.js';
+import riskScores from './routes/riskScores.js';
+import dashboard from './routes/dashboard.js';
+import { runRiskBatch } from './jobs/riskBatch.js';
 
 const app = express();
 app.use(cors());
@@ -47,6 +50,10 @@ app.use('/api/work-orders', workOrders);
 
 // ---- MongoDB-backed resources ----
 app.use('/api/error-logs', errorLogs);
+app.use('/api/risk-scores', riskScores);
+
+// ---- Cross-database ----
+app.use('/api/dashboard', dashboard);
 
 // Error handler: maps MySQL constraint errors and Mongoose validation errors to readable 4xx responses
 app.use((err, req, res, next) => {
@@ -64,5 +71,13 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5001;
 connectMongo()
+  .then(() => {
+    // Optional periodic scoring, e.g. RISK_BATCH_INTERVAL_MINUTES=60
+    const minutes = Number(process.env.RISK_BATCH_INTERVAL_MINUTES);
+    if (minutes > 0) {
+      setInterval(() => runRiskBatch().then((r) => console.log(`${r.jobId}: scored ${r.machinesScored} machines`)).catch(console.error), minutes * 60000);
+      console.log(`Risk batch job scheduled every ${minutes} min`);
+    }
+  })
   .catch((err) => console.error('MongoDB connection failed:', err.message))
   .finally(() => app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`)));

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import pool from '../db/mysql.js';
+import { latestRiskFor } from '../jobs/riskBatch.js';
 
 const router = Router();
 const STATUSES = ['open', 'in_progress', 'completed', 'cancelled'];
@@ -43,7 +44,13 @@ router.post('/', async (req, res, next) => {
   if (!machine_id) return res.status(400).json({ error: 'machine_id is required' });
   if (!STATUSES.includes(status)) return res.status(400).json({ error: 'Invalid status' });
 
-  const riskScore = req.body.risk_score_at_creation ?? null;
+  // Snapshot the machine's latest risk score (MongoDB) onto the work order (MySQL)
+  let riskScore = null;
+  try {
+    riskScore = await latestRiskFor(machine_id);
+  } catch (err) {
+    console.warn('Could not read risk score:', err.message);
+  }
 
   const conn = await pool.getConnection();
   try {

@@ -8,7 +8,8 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "db:init": "node scripts/initMysql.js",
-    "db:seed-mongo": "node scripts/seedMongo.js"
+    "db:seed-mongo": "node scripts/seedMongo.js",
+    "risk:run": "node scripts/runRiskBatch.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
