@@ -6,6 +6,7 @@ import { connectMongo, isMongoUp } from './db/mongo.js';
 import crudRouter from './routes/crudRouter.js';
 import machines from './routes/machines.js';
 import workOrders from './routes/workOrders.js';
+import errorLogs from './routes/errorLogs.js';
 
 const app = express();
 app.use(cors());
@@ -44,8 +45,12 @@ app.use(
 );
 app.use('/api/work-orders', workOrders);
 
-// Error handler: maps MySQL constraint errors to readable 4xx responses
+// ---- MongoDB-backed resources ----
+app.use('/api/error-logs', errorLogs);
+
+// Error handler: maps MySQL constraint errors and Mongoose validation errors to readable 4xx responses
 app.use((err, req, res, next) => {
+  if (err.name === 'ValidationError' || err.name === 'CastError') return res.status(400).json({ error: err.message });
   const mysqlErrors = {
     ER_DUP_ENTRY: [409, 'Duplicate value'],
     ER_NO_REFERENCED_ROW_2: [400, 'Referenced record does not exist'],
